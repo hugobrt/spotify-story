@@ -189,8 +189,16 @@
     const played = await rpRes.json();
     if (played.error) throw new Error('Last.fm : ' + played.error);
 
-    const rawImg    = artists.items[0]?.images?.[0]?.url || null;
-    const artistImg = rawImg ? `/api/image-proxy?url=${encodeURIComponent(rawImg)}` : null;
+    // Récupère l'image en base64 côté serveur → zéro problème CORS/cache canvas
+    const rawImg = artists.items[0]?.images?.[0]?.url || null;
+    let artistImg = null;
+    if (rawImg) {
+      try {
+        const imgRes = await fetch(`/api/artist-image?url=${encodeURIComponent(rawImg)}`);
+        const imgData = await imgRes.json();
+        artistImg = imgData.dataUrl || null;
+      } catch { artistImg = null; }
+    }
 
     return {
       name:      profile.display_name || 'Toi',
@@ -297,12 +305,7 @@
       };
       img.onerror = render;
       img.src = data.artistImg;
-      if (img.complete) {
-         const scale = Math.max(W/img.width, 520/img.height);
-        ctx.drawImage(img, (W - img.width*scale)/2, 0, img.width*scale, img.height*scale);
-        render();
-  }
-} else {
+    } else {
       const bg = ctx.createLinearGradient(0,0,W,520);
       bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#0f3460');
       ctx.fillStyle = bg; ctx.fillRect(0,0,W,520);
