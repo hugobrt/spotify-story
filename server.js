@@ -20,6 +20,14 @@ if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !LASTFM_API_KEY || !LASTFM_
 
 const SCOPES = 'user-top-read user-read-private';
 
+// Désactive le cache sur toutes les routes /api (fix 304 Cloudflare/Render)
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.removeHeader('ETag');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 /* ── 1. Login Spotify ── */
