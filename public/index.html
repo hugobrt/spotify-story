@@ -297,7 +297,12 @@
       };
       img.onerror = render;
       img.src = data.artistImg;
-    } else {
+      if (img.complete) {
+         const scale = Math.max(W/img.width, 520/img.height);
+        ctx.drawImage(img, (W - img.width*scale)/2, 0, img.width*scale, img.height*scale);
+        render();
+  }
+} else {
       const bg = ctx.createLinearGradient(0,0,W,520);
       bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#0f3460');
       ctx.fillStyle = bg; ctx.fillRect(0,0,W,520);
