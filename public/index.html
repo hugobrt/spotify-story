@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma capsule audio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a; color: #fff;
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center; padding: 2rem 1rem;
+    }
+    .app { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
+
+    .card {
+      width: 100%; background: #161616;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+      padding: 2rem 1.75rem; display: none;
+      flex-direction: column; align-items: center; gap: 1.75rem;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo svg { width: 30px; height: 30px; fill: #1DB954; }
+    .logo span { font-size: 22px; font-weight: 700; color: #1DB954; letter-spacing: -0.4px; }
+
+    .month-badge {
+      background: rgba(29,185,84,0.1); border: 1px solid rgba(29,185,84,0.25);
+      border-radius: 50px; padding: 8px 18px;
+      font-size: 14px; color: #1DB954; font-weight: 500;
+    }
+
+    .sources {
+      width: 100%; display: flex; gap: 10px;
+    }
+    .source-chip {
+      flex: 1; padding: 10px 8px; border-radius: 10px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.5;
+    }
+    .source-chip span { display: block; font-size: 13px; font-weight: 600; color: #fff; margin-top: 2px; }
+
+    .sp-btn {
+      width: 100%; padding: 14px; border-radius: 50px; border: none;
+      background: #1DB954; color: #000; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: opacity 0.2s;
+    }
+    .sp-btn:hover { opacity: 0.85; }
+    .sp-btn svg { width: 22px; height: 22px; fill: #000; }
+    .note { font-size: 11px; color: rgba(255,255,255,0.3); text-align: center; line-height: 1.7; }
+
+    .loading { display: none; flex-direction: column; align-items: center; gap: 16px; padding: 3rem 0; }
+    .spin {
+      width: 36px; height: 36px;
+      border: 2.5px solid rgba(29,185,84,0.2); border-top-color: #1DB954;
+      border-radius: 50%; animation: rot 0.75s linear infinite;
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+    .load-txt { font-size: 14px; color: rgba(255,255,255,0.5); }
+    .load-sub  { font-size: 12px; color: rgba(255,255,255,0.25); }
+
+    .err {
+      width: 100%; display: none;
+      background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 13px; color: #e74c3c; line-height: 1.6;
+    }
+
+    .result { display: none; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+    .preview-wrap {
+      border-radius: 22px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 315px; height: 560px;
+    }
+    #cv { display: block; width: 315px; height: 560px; }
+
+    .actions { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 315px; }
+    .dl-btn {
+      width: 100%; padding: 14px; border-radius: 50px; border: none;
+      background: #1DB954; color: #000; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.2s;
+    }
+    .dl-btn:hover { opacity: 0.85; }
+    .fmt-note { font-size: 11px; color: rgba(255,255,255,0.3); }
+    .back-btn {
+      background: none; border: none; font-size: 12px;
+      color: rgba(255,255,255,0.3); cursor: pointer; text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="card" id="card">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 01-.277-1.215c3.809-.87 7.077-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.779.779 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.78.78 0 01.519-.972c3.632-1.102 8.147-.568 11.234 1.328a.779.779 0 01.257 1.072zm.105-2.835C14.692 9.154 9.375 8.982 6.297 9.92a.935.935 0 11-.543-1.79c3.532-1.073 9.404-.866 13.115 1.337a.936.936 0 01-.955 1.6z"/></svg>
+      <span>Ma capsule audio</span>
+    </div>
+
+    <div class="month-badge" id="monthBadge">…</div>
+
+    <div class="sources">
+      <div class="source-chip">🎵 Top artistes & titres<span>Spotify</span></div>
+      <div class="source-chip">⏱️ Temps d'écoute réel<span>Last.fm</span></div>
+    </div>
+
+    <button class="sp-btn" onclick="auth()">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.622.622 0 01-.857.207c-2.348-1.435-5.304-1.76-8.785-.964a.622.622 0 01-.277-1.215c3.809-.87 7.077-.496 9.712 1.115a.623.623 0 01.207.857zm1.223-2.722a.779.779 0 01-1.072.257c-2.687-1.652-6.785-2.131-9.965-1.166a.78.78 0 01-.973-.519.78.78 0 01.519-.972c3.632-1.102 8.147-.568 11.234 1.328a.779.779 0 01.257 1.072zm.105-2.835C14.692 9.154 9.375 8.982 6.297 9.92a.935.935 0 11-.543-1.79c3.532-1.073 9.404-.866 13.115 1.337a.936.936 0 01-.955 1.6z"/></svg>
+      Générer ma capsule
+    </button>
+
+    <p class="note">Tes données restent privées — rien n'est stocké.</p>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spin"></div>
+    <div class="load-txt" id="load-txt">Connexion à Spotify…</div>
+    <div class="load-sub" id="load-sub"></div>
+  </div>
+
+  <div class="err" id="err"></div>
+
+  <div class="result" id="result">
+    <div class="preview-wrap"><canvas id="cv" width="900" height="1600"></canvas></div>
+    <div class="actions">
+      <button class="dl-btn" onclick="dl()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Télécharger ma story
+      </button>
+      <span class="fmt-note">PNG 9:16 — Instagram · TikTok · Snapchat</span>
+      <button class="back-btn" onclick="reset()">← Recommencer</button>
+    </div>
+  </div>
+
+</div>
+<script>
+  const MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const now    = new Date();
+  document.getElementById('monthBadge').textContent = MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+
+  let token = null;
+
+  function setLoad(txt, sub) {
+    document.getElementById('load-txt').textContent = txt;
+    document.getElementById('load-sub').textContent = sub || '';
+  }
+
+  function auth() { window.location.href = '/auth/login'; }
+
+  function showErr(msg) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('card').style.display    = 'flex';
+    const e = document.getElementById('err');
+    e.style.display = 'block'; e.textContent = '⚠️ ' + msg;
+  }
+
+  function reset() {
+    token = null;
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('card').style.display   = 'flex';
+    history.replaceState({}, '', '/');
+  }
+
+  function dl() {
+    const a = document.createElement('a');
+    a.download = 'capsule-audio-' + MONTHS[now.getMonth()] + '-' + now.getFullYear() + '.png';
+    a.href = document.getElementById('cv').toDataURL('image/png');
+    a.click();
+  }
+
+  async function loadData(tkn) {
+    const h = { Authorization: `Bearer ${tkn}` };
+
+    // Spotify : tops + profil en parallèle
+    setLoad('Récupération de tes tops Spotify…');
+    const [tr, ar, pr] = await Promise.all([
+      fetch('/api/top/tracks?limit=5',  { headers: h }),
+      fetch('/api/top/artists?limit=5', { headers: h }),
+      fetch('/api/me',                  { headers: h }),
+    ]);
+    if (!tr.ok) throw new Error('Erreur Spotify (' + tr.status + ')');
+    const [tracks, artists, profile] = await Promise.all([tr.json(), ar.json(), pr.json()]);
+
+    // Last.fm : calcul du temps d'écoute du mois
+    setLoad('Calcul du temps d\'écoute via Last.fm…', 'Peut prendre quelques secondes selon ton historique');
+    const rpRes  = await fetch('/api/lastfm-minutes');
+    const played = await rpRes.json();
+    if (played.error) throw new Error('Last.fm : ' + played.error);
+
+    const rawImg    = artists.items[0]?.images?.[0]?.url || null;
+    const artistImg = rawImg ? `/api/image-proxy?url=${encodeURIComponent(rawImg)}` : null;
+
+    return {
+      name:      profile.display_name || 'Toi',
+      topArtist: artists.items[0]?.name || '—',
+      artistImg,
+      artists:   artists.items.map(a => a.name),
+      minutes:   played.minutes || 0,
+      scrobbles: played.scrobbles || 0,
+      songs:     tracks.items.map((t, i) => ({ n: i+1, title: t.name, artist: t.artists.map(a=>a.name).join(', ') }))
+    };
+  }
+
+  function draw(data) {
+    const cv  = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    const W = 900, H = 1600;
+    ctx.clearRect(0, 0, W, H);
+    const monthLabel = MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+
+    const render = () => {
+      ctx.fillStyle = '#111111'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 520, W, H - 520);
+
+      const fade = ctx.createLinearGradient(0, 350, 0, 610);
+      fade.addColorStop(0,   'rgba(17,17,17,0)');
+      fade.addColorStop(0.7, 'rgba(17,17,17,0.92)');
+      fade.addColorStop(1,   'rgba(26,26,26,1)');
+      ctx.fillStyle = fade; ctx.fillRect(0, 350, W, 260);
+
+      // Header
+      ctx.font = '600 28px -apple-system,sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+      ctx.fillText('Spotify Premium', 56, 68);
+      ctx.font = '400 26px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.textAlign = 'right';
+      ctx.fillText(monthLabel, W - 56, 68);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(56, 94); ctx.lineTo(W-56, 94); ctx.stroke();
+
+      // Titre
+      ctx.textAlign = 'left'; ctx.font = '700 74px -apple-system,sans-serif'; ctx.fillStyle = '#fff';
+      ctx.fillText('Ma capsule', 56, 482);
+      ctx.fillText('audio', 56, 566);
+
+      // Séparateur colonnes
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(56, 628); ctx.lineTo(W-56, 628); ctx.stroke();
+
+      // Colonnes top artistes / top titres
+      const col1 = 56, col2 = W/2 + 20, colTY = 692;
+      ctx.font = '700 32px -apple-system,sans-serif'; ctx.fillStyle = '#fff';
+      ctx.fillText('Top artistes', col1, colTY);
+      ctx.fillText('Top titres',   col2, colTY);
+
+      const artists5 = [...data.artists]; while (artists5.length < 5) artists5.push('—');
+      artists5.slice(0,5).forEach((a, i) => {
+        const y = colTY + 56 + i * 54;
+        ctx.font = '500 25px -apple-system,sans-serif';
+        ctx.fillStyle = i === 0 ? '#1DB954' : 'rgba(255,255,255,0.45)';
+        ctx.fillText(i+1, col1, y);
+        ctx.fillStyle = i === 0 ? '#fff' : 'rgba(255,255,255,0.6)';
+        ctx.font = i === 0 ? '600 27px -apple-system,sans-serif' : '400 25px -apple-system,sans-serif';
+        ctx.fillText(a.length > 13 ? a.slice(0,11)+'…' : a, col1+38, y);
+      });
+      data.songs.forEach((t, i) => {
+        const y = colTY + 56 + i * 54;
+        ctx.font = '500 25px -apple-system,sans-serif';
+        ctx.fillStyle = i === 0 ? '#1DB954' : 'rgba(255,255,255,0.45)';
+        ctx.fillText(i+1, col2, y);
+        ctx.fillStyle = i === 0 ? '#fff' : 'rgba(255,255,255,0.6)';
+        ctx.font = i === 0 ? '600 27px -apple-system,sans-serif' : '400 25px -apple-system,sans-serif';
+        ctx.fillText(t.title.length > 13 ? t.title.slice(0,11)+'…' : t.title, col2+38, y);
+      });
+
+      // Temps d'écoute
+      const sepY = colTY + 340;
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(56, sepY); ctx.lineTo(W-56, sepY); ctx.stroke();
+
+      ctx.font = '700 32px -apple-system,sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+      ctx.fillText("Temps d'écoute", 56, sepY + 58);
+
+      // Minutes en grand
+      ctx.font = '700 88px -apple-system,sans-serif'; ctx.fillStyle = '#1DB954';
+      ctx.fillText(data.minutes.toLocaleString('fr-FR') + ' minutes', 56, sepY + 160);
+
+      // Nb de scrobbles en petit
+      ctx.font = '400 24px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillText(data.scrobbles.toLocaleString('fr-FR') + ' écoutes ce mois · via Last.fm', 56, sepY + 205);
+
+      // Footer
+      ctx.font = '400 22px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.textAlign = 'center';
+      ctx.fillText(data.name + ' · capsule audio', W/2, H - 50);
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath(); ctx.arc(W/2 + i*20, H-22, i===0?5:3.5, 0, Math.PI*2);
+        ctx.fillStyle = i===0 ? '#1DB954' : 'rgba(255,255,255,0.15)'; ctx.fill();
+      }
+    };
+
+    if (data.artistImg) {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.max(W/img.width, 520/img.height);
+        ctx.drawImage(img, (W - img.width*scale)/2, 0, img.width*scale, img.height*scale);
+        render();
+      };
+      img.onerror = render;
+      img.src = data.artistImg;
+    } else {
+      const bg = ctx.createLinearGradient(0,0,W,520);
+      bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#0f3460');
+      ctx.fillStyle = bg; ctx.fillRect(0,0,W,520);
+      render();
+    }
+  }
+
+  async function init() {
+    const urlParams = new URLSearchParams(location.search);
+    const urlError  = urlParams.get('error');
+    if (urlError) { showErr(urlError); document.getElementById('card').style.display = 'flex'; return; }
+
+    const tkn = new URLSearchParams(location.hash.slice(1)).get('access_token');
+    if (!tkn) { document.getElementById('card').style.display = 'flex'; return; }
+
+    token = tkn;
+    history.replaceState({}, '', '/');
+    document.getElementById('loading').style.display = 'flex';
+
+    try {
+      const data = await loadData(token);
+      document.getElementById('loading').style.display = 'none';
+      draw(data);
+      document.getElementById('result').style.display = 'flex';
+    } catch(e) { showErr(e.message); }
+  }
+
+  init();
+</script>
+</body>
+</html>
