@@ -91,20 +91,21 @@ app.get('/api/me', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-/* ── 5. Proxy image artiste (fix CORS canvas) ── */
-app.get('/api/image-proxy', async (req, res) => {
+/* ── 5. Image artiste en base64 (résout définitivement CORS + cache canvas) ── */
+app.get('/api/artist-image', async (req, res) => {
   const { url } = req.query;
-  if (!url) return res.status(400).send('URL manquante');
+  if (!url) return res.status(400).json({ error: 'URL manquante' });
   if (!url.startsWith('https://i.scdn.co/') && !url.startsWith('https://mosaic.scdn.co/')) {
-    return res.status(403).send('Domaine non autorisé');
+    return res.status(403).json({ error: 'Domaine non autorisé' });
   }
   try {
     const r = await fetch(url);
-    if (!r.ok) return res.status(r.status).send('Image introuvable');
-    res.set('Content-Type', r.headers.get('content-type') || 'image/jpeg');
-    res.set('Cache-Control', 'public, max-age=3600');
-    r.body.pipe(res);
-  } catch (err) { res.status(500).send('Erreur proxy'); }
+    if (!r.ok) return res.status(r.status).json({ error: 'Image introuvable' });
+    const buffer = await r.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    const mime   = r.headers.get('content-type') || 'image/jpeg';
+    res.json({ dataUrl: `data:${mime};base64,${base64}` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 /* ── 6. Temps d'écoute via Last.fm ── */
